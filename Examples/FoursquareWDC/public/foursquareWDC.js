@@ -56,8 +56,8 @@
         // This helper function returns the URI for the venueLikes endpoint
         // It appends the passed in accessToken to the call to personalize the call for the user
         function getVenueLikesURI(accessToken) {
-            return "http://localhost:8080/mrx-like-app/csv1?access_token=" +
-                    accessToken;
+            return "http://localhost:8080/mrx-like-app/csv1?access_token=" + accessToken;
+            //return "http://localhost:8080/mrx-like-app/csv1";
         }
 
         // This function toggles the label shown depending
@@ -159,13 +159,15 @@
                    url: connectionUri,
                    dataType: 'json',
                    success: function (data) {
-                       if (data.response) {
-                           var venues = data.response.venues.items;
+                   console.log(data);
+                   var dataToReturn = [];
+                       if (data.features) {
+                           var venues = data.features;
 
                            var ii;
                            for (ii = 0; ii < venues.length; ++ii) {
                                var venue = {'id': venues[ii].id,
-                                            'mag': venues[ii].properties.msg,
+                                            'mag': venues[ii].properties.mag,
                                             'title': venues[ii].properties.title,
                                             'location' : venues[ii].geometry};
                                dataToReturn.push(venue);
