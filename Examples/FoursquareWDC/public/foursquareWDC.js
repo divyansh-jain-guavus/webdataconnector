@@ -1,14 +1,9 @@
-//const Keycloak = require("keycloak-js");
-//const { KeycloakService } = require("./keycloakUtils");
-
-//import KeycloakService from './keycloakUtils';
-
 var keycloakAuth;
-var accessToken;
-
 
 (function () {
     'use strict';
+
+    var accessToken;
 
     // This config stores the important strings needed to
     // connect to the keycloak API and OAuth service to
@@ -18,43 +13,41 @@ var accessToken;
     // Do not store your client secret here.
     // We are using a server-side OAuth flow, and the client
     // secret is kept on the web server.
-    var config = {
-        clientId: 'demo_app',
-        redirectUri: 'http://localhost:3333/redirect', // url where web data connector is running
-        redirectUri1: 'http://localhost:3333/index.html',
-        authUrl: 'http://localhost:8180/auth',
-        realm: 'divyansh'
-    };
 
     // using keycloak library
+
+    function loginToKeyCloak() {
+
+        const keycloakConfig = {
+            'url': 'http://localhost:8180/auth',
+            'realm': 'divyansh',
+            'clientId': 'demo_client1'
+        };
+
+        keycloakAuth = new Keycloak(keycloakConfig);
+        console.log(keycloakAuth)
+        keycloakAuth.init({ onLoad: 'login-required', checkLoginIframe: false })
+            .success((res) => {
+                //accessToken = keycloakAuth.token;
+                tableau.password = keycloakAuth.token;
+                console.log(res);
+                var hasAuth = keycloakAuth.token.length > 0;
+                //var hasAuth = accessToken && accessToken.length > 0; // see if the user has already logged in and is already authenticated with the OAuth provider
+                updateUIWithAuthState(hasAuth);
+            })
+            .error((err) => {
+                console.log(err)
+            });
+    }
 
     // This function parses the access token in the URI if available
     // It also adds a link to the foursquare connect button
     $(document).ready(function () {
 
-        const config = {
-            'url': 'http://localhost:8180/auth',
-            'realm': 'divyansh',
-            'clientId': 'demo_client1'
-        };
-        keycloakAuth = new Keycloak(config);
-        console.log(keycloakAuth)
-        keycloakAuth.init({ onLoad: 'login-required', checkLoginIframe: false })
-            .success((res) => {
-                accessToken = keycloakAuth.token;
-                console.log(res);
-                
-                //var hasAuth = accessToken && accessToken.length > 0; // see if the user has already logged in and is already authenticated with the OAuth provider
-                updateUIWithAuthState(hasAuth);
-            })
-            .error((err) => {
-                console.log('hello')
-                console.log(err)
-
-            });
+        loginToKeyCloak();
 
         $("#connectbutton").click(function () {
-            doAuthRedirect();
+            loginToKeyCloak();
         });
 
         $("#getvenuesbutton").click(function () {
@@ -64,28 +57,13 @@ var accessToken;
             console.log("tableau submit called");
         });
     });
-
-    // An on-click function for the connect to foursquare button,
-    // This will redirect the user to a foursquare login
-    function doAuthRedirect() {
-        var appId = config.clientId;
-        if (tableau.authPurpose === tableau.authPurposeEnum.ephemeral) {
-            appId = config.clientId;  // This should be Desktop
-        } else if (tableau.authPurpose === tableau.authPurposeEnum.enduring) {
-            appId = config.clientId; // This should be the Tableau Server appID
-        }
-
-        var url = config.authUrl + '/realms/' + config.realm + "/protocol/openid-connect/auth?response_type=code&client_id=" + appId +
-            '&scope=openid' + '&redirect_uri=' + config.redirectUri1;
-        window.location.href = url; // open the new url in the same window, we are updating the current window url here
-    }
+    
 
     //------------- OAuth Helpers -------------//
-    // This helper function returns the URI for the venueLikes endpoint
+    // This helper function returns the URI for the sample app endpoint
     // It appends the passed in accessToken to the call to personalize the call for the user
-    function getVenueLikesURI(accessToken) {
-        return "http://localhost:8080/mrx-like-app/csv1?access_token=" + accessToken;
-        //return "http://localhost:8080/mrx-like-app/csv1";
+    function getSampleAppURI(accessToken) {
+        return "http://localhost:8080/mrx-like-app/csv2?access_token=" + accessToken;
     }
 
     // This function toggles the label shown depending
@@ -124,20 +102,13 @@ var accessToken;
             //tableau.abortForAuth("access token invalid, please login again");
         }
 
-        var accessToken = Cookies.get("accessToken");
-        console.log("Access token is '" + accessToken + "'");
-        var hasAuth = (accessToken && accessToken.length > 0) || tableau.password.length > 0; // || -> &&, this ensures that each time the user is asked to log in
-        updateUIWithAuthState(hasAuth);
-
         initCallback();
 
         // If we are not in the data gathering phase, we want to store the token
         // This allows us to access the token in the data gathering phase
 
         if (tableau.phase == tableau.phaseEnum.interactivePhase || tableau.phase == tableau.phaseEnum.authPhase) {
-            if (hasAuth) {
-                tableau.password = "";
-                tableau.password = accessToken;
+            if (tableau.password.length > 0) {
 
                 if (tableau.phase == tableau.phaseEnum.authPhase) {
                     // Auto-submit here if we are in the auth phase
@@ -181,7 +152,7 @@ var accessToken;
         keycloakAuth.updateToken(20).success(res => {
             
             //tableau.password = ""; // this ensures that each time the user is asked to log in
-            var connectionUri = getVenueLikesURI(keycloakAuth.token);
+            var connectionUri = getSampleAppURI(keycloakAuth.token);
 
             var xhr = $.ajax({
                 url: connectionUri,
