@@ -10,14 +10,15 @@ var path = require('path');
 var config = require('./config.js');              // Get our config info (app id and app secret)
 var sys = require('util');
 
-var app = express();
+
+var app = express(); // Create a new Express Instance, basically an app that listens on a port
 
 // -------------------------------------------------- //
 // Express set-up and middleware
 // -------------------------------------------------- //
 app.set('port', (process.env.PORT || config.PORT));
 app.use(cookieParser());                                    // cookieParser middleware to work with cookies
-app.use(express.static(__dirname + '/public'));
+app.use(express.static(__dirname + '/public')); // returns a middleware that serves all files in that path to /public
 
 // -------------------------------------------------- //
 // Variables
@@ -32,12 +33,12 @@ var redirectURI = config.HOSTPATH + ":" + config.PORT + config.REDIRECT_PATH
 // Routes
 // -------------------------------------------------- //
 
-app.get('/', function(req, res) {
-  console.log("got here");
-  res.redirect('/index.html');
+app.get('/', function(req, res) { // if someone hits the homepage then this function will be called
+  console.log("redirected to index.html");
+  res.redirect('/index.html'); // it will redirect to this file
 });
 
-// This route is hit once Foursquare redirects to our
+// This route is hit once Keycloak redirects to our
 // server after performing authentication
 app.get('/redirect', function(req, res) {
   // get our authorization code
